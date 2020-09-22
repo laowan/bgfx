@@ -4108,6 +4108,9 @@ namespace bgfx
 		, const char* _filePath
 		);
 
+	/// for debug
+	uintptr_t getInternal(TextureHandle _handle);
+
 } // namespace bgfx
 
 #endif // BGFX_H_HEADER_GUARD

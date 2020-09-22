@@ -2861,7 +2861,7 @@ namespace bgfx
 		virtual void updateDynamicVertexBuffer(VertexBufferHandle _handle, uint32_t _offset, uint32_t _size, const Memory* _mem) = 0;
 		virtual void destroyDynamicVertexBuffer(VertexBufferHandle _handle) = 0;
 		virtual void createShader(ShaderHandle _handle, const Memory* _mem) = 0;
-		virtual void createShader(ShaderHandle _handle, const Memory* _mem, uint16_t _glslType) { BX_UNUSED_3(_handle, _mem, _glslType); }
+		virtual void createShader(ShaderHandle _handle, const Memory* _mem, uint16_t _glslType) { createShader(_handle, _mem); BX_UNUSED_1(_glslType); }
 		virtual void destroyShader(ShaderHandle _handle) = 0;
 		virtual void createProgram(ProgramHandle _handle, ShaderHandle _vsh, ShaderHandle _fsh) = 0;
 		virtual void destroyProgram(ProgramHandle _handle) = 0;

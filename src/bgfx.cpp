@@ -5081,6 +5081,12 @@ namespace bgfx
 		BGFX_CHECK_API_THREAD();
 		s_ctx->requestScreenShot(_handle, _filePath);
 	}
+
+	uintptr_t getInternal(TextureHandle _handle)
+	{
+		BGFX_CHECK_API_THREAD();
+		return s_ctx->m_renderCtx->getInternal(_handle);
+	}
 } // namespace bgfx
 
 #if BGFX_CONFIG_PREFER_DISCRETE_GPU
