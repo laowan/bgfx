@@ -2936,7 +2936,10 @@ namespace bgfx
 					const Memory* mem;
 					_cmdbuf.read(mem);
 
-					m_renderCtx->createShader(handle, mem);
+					uint16_t glslType = 0;
+					_cmdbuf.read(glslType);
+
+					m_renderCtx->createShader(handle, mem, glslType);
 
 					release(mem);
 				}
@@ -4158,10 +4161,10 @@ namespace bgfx
 		s_ctx->destroyIndirectBuffer(_handle);
 	}
 
-	ShaderHandle createShader(const Memory* _mem)
+	ShaderHandle createShader(const Memory* _mem, uint16_t glslFlag)
 	{
 		BX_ASSERT(NULL != _mem, "_mem can't be NULL");
-		return s_ctx->createShader(_mem);
+		return s_ctx->createShader(_mem, glslFlag);
 	}
 
 	uint16_t getShaderUniforms(ShaderHandle _handle, UniformHandle* _uniforms, uint16_t _max)

@@ -23,10 +23,10 @@ void* load(const char* _filePath, uint32_t* _size = NULL);
 void unload(void* _ptr);
 
 ///
-bgfx::ShaderHandle loadShader(const char* _name);
+bgfx::ShaderHandle loadShader(const char* _name, uint16_t _glslFlag = 0);
 
 ///
-bgfx::ProgramHandle loadProgram(const char* _vsName, const char* _fsName);
+bgfx::ProgramHandle loadProgram(const char* _vsName, const char* _fsName, uint16_t _glslType = 0);
 
 ///
 bgfx::TextureHandle loadTexture(const char* _name, uint64_t _flags = BGFX_TEXTURE_NONE|BGFX_SAMPLER_NONE, uint8_t _skip = 0, bgfx::TextureInfo* _info = NULL, bimg::Orientation::Enum* _orientation = NULL);

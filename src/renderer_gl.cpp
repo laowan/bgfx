@@ -3183,6 +3183,11 @@ namespace bgfx { namespace gl
 			m_shaders[_handle.idx].create(_mem);
 		}
 
+		void createShader(ShaderHandle _handle, const Memory* _mem, uint16_t _glslFlag) override
+		{
+			m_shaders[_handle.idx].create(_mem, _glslFlag);
+		}
+
 		void destroyShader(ShaderHandle _handle) override
 		{
 			m_shaders[_handle.idx].destroy();
@@ -5829,10 +5834,48 @@ namespace bgfx { namespace gl
 		bx::memCopy(_str, _insert, len);
 	}
 
-	void ShaderGL::create(const Memory* _mem)
+	void ShaderGL::create(const Memory* _mem, uint16_t _glslType)
 	{
 		bx::MemoryReader reader(_mem->data, _mem->size);
 		m_hash = bx::hash<bx::HashMurmur2A>(_mem->data, _mem->size);
+
+		if (_glslType > 0)
+		{
+			if (_glslType == 1) m_type = GL_VERTEX_SHADER;
+			else m_type = GL_FRAGMENT_SHADER;
+
+			m_id = glCreateShader(m_type);
+			BX_WARN(0 != m_id, "Failed to create shader.");
+
+			bx::StringView code((char*)_mem->data, _mem->size);
+
+			GL_CHECK(glShaderSource(m_id, 1, (const GLchar**)&code, NULL));
+			GL_CHECK(glCompileShader(m_id));
+
+			GLint compiled = 0;
+			GL_CHECK(glGetShaderiv(m_id, GL_COMPILE_STATUS, &compiled));
+
+			if (0 == compiled)
+			{
+				bx::LineReader lineReader(code);
+				for (int32_t line = 1; !lineReader.isDone(); ++line)
+				{
+					bx::StringView str = lineReader.next();
+					BX_TRACE("%3d %.*s", line, str.getLength(), str.getPtr());
+					BX_UNUSED(str);
+				}
+
+				GLsizei len;
+				char log[1024];
+				GL_CHECK(glGetShaderInfoLog(m_id, sizeof(log), &len, log));
+				BX_TRACE("Failed to compile shader. %d: %s", compiled, log);
+
+				GL_CHECK(glDeleteShader(m_id));
+				m_id = 0;
+				BGFX_FATAL(false, bgfx::Fatal::InvalidShader, "Failed to compile shader.");
+			}
+			return;
+		}
 
 		uint32_t magic;
 		bx::read(&reader, magic);

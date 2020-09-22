@@ -2519,7 +2519,7 @@ namespace bgfx
 	///
 	/// @attention C99 equivalent is `bgfx_create_shader`.
 	///
-	ShaderHandle createShader(const Memory* _mem);
+	ShaderHandle createShader(const Memory* _mem, uint16_t glslFlag = 0);
 
 	/// Returns the number of uniforms and uniform handles used inside a shader.
 	///

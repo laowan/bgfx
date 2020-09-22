@@ -2861,6 +2861,7 @@ namespace bgfx
 		virtual void updateDynamicVertexBuffer(VertexBufferHandle _handle, uint32_t _offset, uint32_t _size, const Memory* _mem) = 0;
 		virtual void destroyDynamicVertexBuffer(VertexBufferHandle _handle) = 0;
 		virtual void createShader(ShaderHandle _handle, const Memory* _mem) = 0;
+		virtual void createShader(ShaderHandle _handle, const Memory* _mem, uint16_t _glslType) { BX_UNUSED_3(_handle, _mem, _glslType); }
 		virtual void destroyShader(ShaderHandle _handle) = 0;
 		virtual void createProgram(ProgramHandle _handle, ShaderHandle _vsh, ShaderHandle _fsh) = 0;
 		virtual void destroyProgram(ProgramHandle _handle) = 0;
@@ -3799,51 +3800,54 @@ namespace bgfx
 			m_submit->free(handle);
 		}
 
-		BGFX_API_FUNC(ShaderHandle createShader(const Memory* _mem) )
+		BGFX_API_FUNC(ShaderHandle createShader(const Memory* _mem, uint16_t glslFlag) )
 		{
 			BGFX_MUTEX_SCOPE(m_resourceApiLock);
 
 			bx::MemoryReader reader(_mem->data, _mem->size);
 
 			bx::Error err;
+			uint32_t magic = 0;
 
-			uint32_t magic;
-			bx::read(&reader, magic, &err);
-
-			if (!err.isOk() )
+			if (glslFlag == 0)
 			{
-				BX_TRACE("Couldn't read shader signature!");
-				release(_mem);
-				return BGFX_INVALID_HANDLE;
-			}
+				bx::read(&reader, magic, &err);
 
-			if (!isShaderBin(magic) )
-			{
-				BX_TRACE("Invalid shader signature! %c%c%c%d."
-					, ( (uint8_t*)&magic)[0]
-					, ( (uint8_t*)&magic)[1]
-					, ( (uint8_t*)&magic)[2]
-					, ( (uint8_t*)&magic)[3]
-					);
-				release(_mem);
-				return BGFX_INVALID_HANDLE;
-			}
+				if (!err.isOk() )
+				{
+					BX_TRACE("Couldn't read shader signature!");
+					release(_mem);
+					return BGFX_INVALID_HANDLE;
+				}
 
-			if (isShaderType(magic, 'C')
-			&&  0 == (g_caps.supported & BGFX_CAPS_COMPUTE) )
-			{
-				BX_TRACE("Creating compute shader but compute is not supported!");
-				release(_mem);
-				return BGFX_INVALID_HANDLE;
-			}
+				if (!isShaderBin(magic) )
+				{
+					BX_TRACE("Invalid shader signature! %c%c%c%d."
+						, ( (uint8_t*)&magic)[0]
+						, ( (uint8_t*)&magic)[1]
+						, ( (uint8_t*)&magic)[2]
+						, ( (uint8_t*)&magic)[3]
+						);
+					release(_mem);
+					return BGFX_INVALID_HANDLE;
+				}
 
-			if ( (isShaderType(magic, 'C') && isShaderVerLess(magic, 3) )
-			||   (isShaderType(magic, 'F') && isShaderVerLess(magic, 5) )
-			||   (isShaderType(magic, 'V') && isShaderVerLess(magic, 5) ) )
-			{
-				BX_TRACE("Unsupported shader binary version.");
-				release(_mem);
-				return BGFX_INVALID_HANDLE;
+				if (isShaderType(magic, 'C')
+				&&  0 == (g_caps.supported & BGFX_CAPS_COMPUTE) )
+				{
+					BX_TRACE("Creating compute shader but compute is not supported!");
+					release(_mem);
+					return BGFX_INVALID_HANDLE;
+				}
+
+				if ( (isShaderType(magic, 'C') && isShaderVerLess(magic, 3) )
+				||   (isShaderType(magic, 'F') && isShaderVerLess(magic, 5) )
+				||   (isShaderType(magic, 'V') && isShaderVerLess(magic, 5) ) )
+				{
+					BX_TRACE("Unsupported shader binary version.");
+					release(_mem);
+					return BGFX_INVALID_HANDLE;
+				}
 			}
 
 			const uint32_t shaderHash = bx::hash<bx::HashMurmur2A>(_mem->data, _mem->size);
@@ -3856,28 +3860,31 @@ namespace bgfx
 				return handle;
 			}
 
-			uint32_t hashIn;
-			bx::read(&reader, hashIn, &err);
+			uint32_t hashIn = 0;
+			uint32_t hashOut = 0;
+			uint16_t count = 0;
 
-			uint32_t hashOut;
-
-			if (isShaderVerLess(magic, 6) )
+			if (glslFlag == 0)
 			{
-				hashOut = hashIn;
-			}
-			else
-			{
-				bx::read(&reader, hashOut, &err);
-			}
+				bx::read(&reader, hashIn, &err);
 
-			uint16_t count;
-			bx::read(&reader, count, &err);
+				if (isShaderVerLess(magic, 6) )
+				{
+					hashOut = hashIn;
+				}
+				else
+				{
+					bx::read(&reader, hashOut, &err);
+				}
 
-			if (!err.isOk() )
-			{
-				BX_TRACE("Corrupted shader binary!");
-				release(_mem);
-				return BGFX_INVALID_HANDLE;
+				bx::read(&reader, count, &err);
+
+				if (!err.isOk() )
+				{
+					BX_TRACE("Corrupted shader binary!");
+					release(_mem);
+					return BGFX_INVALID_HANDLE;
+				}
 			}
 
 			ShaderHandle handle = { m_shaderHandle.alloc() };
@@ -3899,54 +3906,58 @@ namespace bgfx
 			sr.m_num      = 0;
 			sr.m_uniforms = NULL;
 
-			UniformHandle* uniforms = (UniformHandle*)alloca(count*sizeof(UniformHandle) );
-
-			for (uint32_t ii = 0; ii < count; ++ii)
+			if (glslFlag == 0)
 			{
-				uint8_t nameSize = 0;
-				bx::read(&reader, nameSize, &err);
+				UniformHandle* uniforms = (UniformHandle*)alloca(count*sizeof(UniformHandle) );
 
-				char name[256];
-				bx::read(&reader, &name, nameSize, &err);
-				name[nameSize] = '\0';
-
-				uint8_t type = 0;
-				bx::read(&reader, type, &err);
-				type &= ~kUniformMask;
-
-				uint8_t num;
-				bx::read(&reader, num, &err);
-
-				uint16_t regIndex;
-				bx::read(&reader, regIndex, &err);
-
-				uint16_t regCount;
-				bx::read(&reader, regCount, &err);
-
-				if (!isShaderVerLess(magic, 8))
+				for (uint32_t ii = 0; ii < count; ++ii)
 				{
-					uint16_t texInfo;
-					bx::read(&reader, texInfo);
+					uint8_t nameSize = 0;
+					bx::read(&reader, nameSize, &err);
+
+					char name[256];
+					bx::read(&reader, &name, nameSize, &err);
+					name[nameSize] = '\0';
+
+					uint8_t type = 0;
+					bx::read(&reader, type, &err);
+					type &= ~kUniformMask;
+
+					uint8_t num;
+					bx::read(&reader, num, &err);
+
+					uint16_t regIndex;
+					bx::read(&reader, regIndex, &err);
+
+					uint16_t regCount;
+					bx::read(&reader, regCount, &err);
+
+					if (!isShaderVerLess(magic, 8))
+					{
+						uint16_t texInfo;
+						bx::read(&reader, texInfo);
+					}
+
+					PredefinedUniform::Enum predefined = nameToPredefinedUniformEnum(name);
+					if (PredefinedUniform::Count == predefined && UniformType::End != UniformType::Enum(type))
+					{
+						uniforms[sr.m_num] = createUniform(name, UniformType::Enum(type), regCount);
+						sr.m_num++;
+					}
 				}
 
-				PredefinedUniform::Enum predefined = nameToPredefinedUniformEnum(name);
-				if (PredefinedUniform::Count == predefined && UniformType::End != UniformType::Enum(type))
+				if (0 != sr.m_num)
 				{
-					uniforms[sr.m_num] = createUniform(name, UniformType::Enum(type), regCount);
-					sr.m_num++;
+					uint32_t size = sr.m_num*sizeof(UniformHandle);
+					sr.m_uniforms = (UniformHandle*)BX_ALLOC(g_allocator, size);
+					bx::memCopy(sr.m_uniforms, uniforms, size);
 				}
-			}
-
-			if (0 != sr.m_num)
-			{
-				uint32_t size = sr.m_num*sizeof(UniformHandle);
-				sr.m_uniforms = (UniformHandle*)BX_ALLOC(g_allocator, size);
-				bx::memCopy(sr.m_uniforms, uniforms, size);
 			}
 
 			CommandBuffer& cmdbuf = getCommandBuffer(CommandBuffer::CreateShader);
 			cmdbuf.write(handle);
 			cmdbuf.write(_mem);
+			cmdbuf.write(glslFlag);
 
 			setDebugName(convert(handle) );
 

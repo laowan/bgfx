@@ -96,7 +96,7 @@ static void* loadMem(bx::FileReaderI* _reader, bx::AllocatorI* _allocator, const
 	return NULL;
 }
 
-static bgfx::ShaderHandle loadShader(bx::FileReaderI* _reader, const char* _name)
+static bgfx::ShaderHandle loadShader(bx::FileReaderI* _reader, const char* _name, uint16_t _glslFlag)
 {
 	char filePath[512];
 
@@ -125,32 +125,32 @@ static bgfx::ShaderHandle loadShader(bx::FileReaderI* _reader, const char* _name
 	bx::strCat(filePath, BX_COUNTOF(filePath), _name);
 	bx::strCat(filePath, BX_COUNTOF(filePath), ".bin");
 
-	bgfx::ShaderHandle handle = bgfx::createShader(loadMem(_reader, filePath) );
+	bgfx::ShaderHandle handle = bgfx::createShader(loadMem(_reader, filePath), _glslFlag);
 	bgfx::setName(handle, _name);
 
 	return handle;
 }
 
-bgfx::ShaderHandle loadShader(const char* _name)
+bgfx::ShaderHandle loadShader(const char* _name, uint16_t _glslFlag)
 {
-	return loadShader(entry::getFileReader(), _name);
+	return loadShader(entry::getFileReader(), _name, _glslFlag);
 }
 
-bgfx::ProgramHandle loadProgram(bx::FileReaderI* _reader, const char* _vsName, const char* _fsName)
+bgfx::ProgramHandle loadProgram(bx::FileReaderI* _reader, const char* _vsName, const char* _fsName, uint16_t _glslType)
 {
-	bgfx::ShaderHandle vsh = loadShader(_reader, _vsName);
+	bgfx::ShaderHandle vsh = loadShader(_reader, _vsName, _glslType == 0 ? 0 : 1);
 	bgfx::ShaderHandle fsh = BGFX_INVALID_HANDLE;
 	if (NULL != _fsName)
 	{
-		fsh = loadShader(_reader, _fsName);
+		fsh = loadShader(_reader, _fsName, _glslType == 0 ? 0 : 2);
 	}
 
 	return bgfx::createProgram(vsh, fsh, true /* destroy shaders when program is destroyed */);
 }
 
-bgfx::ProgramHandle loadProgram(const char* _vsName, const char* _fsName)
+bgfx::ProgramHandle loadProgram(const char* _vsName, const char* _fsName, uint16_t _glslType)
 {
-	return loadProgram(entry::getFileReader(), _vsName, _fsName);
+	return loadProgram(entry::getFileReader(), _vsName, _fsName, _glslType);
 }
 
 static void imageReleaseCb(void* _ptr, void* _userData)
