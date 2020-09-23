@@ -3154,6 +3154,23 @@ namespace bgfx
 				}
 				break;
 
+			case CommandBuffer::UpdateFrameBuffer:
+				{
+					BGFX_PROFILER_SCOPE("UpdateFrameBuffer", 0xff2040ff);
+
+					FrameBufferHandle handle;
+					_cmdbuf.read(handle);
+
+					uint8_t num;
+					_cmdbuf.read(num);
+
+					Attachment attachment[BGFX_CONFIG_MAX_FRAME_BUFFER_ATTACHMENTS];
+					_cmdbuf.read(attachment, sizeof(Attachment) * num);
+					
+					m_renderCtx->updateFrameBuffer(handle, num, attachment);
+				}
+				break;
+
 			case CommandBuffer::DestroyFrameBuffer:
 				{
 					BGFX_PROFILER_SCOPE("DestroyFrameBuffer", 0xff2040ff);
@@ -4645,6 +4662,17 @@ namespace bgfx
 			, _format
 			, _depthFormat
 			);
+	}
+
+	void updateFrameBuffer(FrameBufferHandle _fbh, uint8_t _num, const TextureHandle* _handles, bool _destroyTextures)
+	{
+		Attachment attachment[BGFX_CONFIG_MAX_FRAME_BUFFER_ATTACHMENTS];
+		for (uint8_t ii = 0; ii < _num; ++ii)
+		{
+			Attachment& at = attachment[ii];
+			at.init(_handles[ii], Access::Write, 0, 0, BGFX_RESOLVE_AUTO_GEN_MIPS);
+		}
+		s_ctx->updateFrameBuffer(_fbh, _num, attachment, _destroyTextures);
 	}
 
 	void setName(FrameBufferHandle _handle, const char* _name, int32_t _len)

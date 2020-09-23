@@ -3051,6 +3051,14 @@ namespace bgfx
 		, TextureFormat::Enum _depthFormat = TextureFormat::Count
 		);
 
+	/// update attachment
+	void updateFrameBuffer(
+		FrameBufferHandle _fbh
+		, uint8_t _num
+		, const TextureHandle* _handles
+		, bool _destroyTextures = false
+	);
+
 	/// Set frame buffer debug name.
 	///
 	/// @param[in] _handle frame buffer handle.

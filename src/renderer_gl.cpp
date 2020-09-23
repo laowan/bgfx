@@ -3351,6 +3351,11 @@ namespace bgfx { namespace gl
 			m_frameBuffers[_handle.idx].create(denseIdx, _nwh, _width, _height, _format, _depthFormat);
 		}
 
+		void updateFrameBuffer(FrameBufferHandle _handle, uint8_t _num, const Attachment* _attachment) override
+		{
+			m_frameBuffers[_handle.idx].update(_num, _attachment);
+		}
+
 		void destroyFrameBuffer(FrameBufferHandle _handle) override
 		{
 			uint16_t denseIdx = m_frameBuffers[_handle.idx].destroy();
@@ -6541,6 +6546,17 @@ namespace bgfx { namespace gl
 		m_denseIdx = UINT16_MAX;
 		m_numTh = _num;
 		bx::memCopy(m_attachment, _attachment, _num*sizeof(Attachment) );
+
+		m_needPresent = false;
+
+		postReset();
+	}
+
+	void FrameBufferGL::update(uint8_t _num, const Attachment* _attachment)
+	{
+		m_denseIdx = UINT16_MAX;
+		m_numTh = _num;
+		bx::memCopy(m_attachment, _attachment, _num * sizeof(Attachment));
 
 		m_needPresent = false;
 
