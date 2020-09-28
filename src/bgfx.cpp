@@ -2661,8 +2661,490 @@ namespace bgfx
 		}
 	}
 
+	void Context::dumpCommand(uint8_t _cmd)
+	{
+		switch (_cmd)
+		{
+		case CommandBuffer::RendererInit: BX_TRACE("CommandBuffer::RendererInit"); break;
+		case CommandBuffer::RendererShutdownBegin: BX_TRACE("CommandBuffer::RendererShutdownBegin"); break;
+		case CommandBuffer::CreateVertexLayout: BX_TRACE("CommandBuffer::CreateVertexLayout"); break;
+		case CommandBuffer::CreateIndexBuffer: BX_TRACE("CommandBuffer::CreateIndexBuffer"); break;
+		case CommandBuffer::CreateVertexBuffer: BX_TRACE("CommandBuffer::CreateVertexBuffer"); break;
+		case CommandBuffer::CreateDynamicIndexBuffer: BX_TRACE("CommandBuffer::CreateDynamicIndexBuffer"); break;
+		case CommandBuffer::UpdateDynamicIndexBuffer: BX_TRACE("CommandBuffer::UpdateDynamicIndexBuffer"); break;
+		case CommandBuffer::CreateDynamicVertexBuffer: BX_TRACE("CommandBuffer::CreateDynamicVertexBuffer"); break;
+		case CommandBuffer::UpdateDynamicVertexBuffer: BX_TRACE("CommandBuffer::UpdateDynamicVertexBuffer"); break;
+		case CommandBuffer::CreateShader: BX_TRACE("CommandBuffer::CreateShader"); break;
+		case CommandBuffer::CreateProgram: BX_TRACE("CommandBuffer::CreateProgram"); break;
+		case CommandBuffer::CreateTexture: BX_TRACE("CommandBuffer::CreateTexture"); break;
+		case CommandBuffer::UpdateTexture: BX_TRACE("CommandBuffer::UpdateTexture"); break;
+		case CommandBuffer::ResizeTexture: BX_TRACE("CommandBuffer::ResizeTexture"); break;
+		case CommandBuffer::CreateFrameBuffer: BX_TRACE("CommandBuffer::CreateFrameBuffer"); break;
+		case CommandBuffer::UpdateFrameBuffer: BX_TRACE("CommandBuffer::UpdateFrameBuffer"); break;
+		//case CommandBuffer::CreateUniform: BX_TRACE("CommandBuffer::CreateUniform"); break;
+		case CommandBuffer::UpdateViewName: BX_TRACE("CommandBuffer::UpdateViewName"); break;
+		case CommandBuffer::InvalidateOcclusionQuery: BX_TRACE("CommandBuffer::InvalidateOcclusionQuery"); break;
+		case CommandBuffer::SetName: BX_TRACE("CommandBuffer::SetName"); break;
+		case CommandBuffer::End: BX_TRACE("CommandBuffer::End"); break;
+		case CommandBuffer::RendererShutdownEnd: BX_TRACE("CommandBuffer::RendererShutdownEnd"); break;
+		case CommandBuffer::DestroyVertexLayout: BX_TRACE("CommandBuffer::DestroyVertexLayout"); break;
+		case CommandBuffer::DestroyIndexBuffer: BX_TRACE("CommandBuffer::DestroyIndexBuffer"); break;
+		case CommandBuffer::DestroyVertexBuffer: BX_TRACE("CommandBuffer::DestroyVertexBuffer"); break;
+		case CommandBuffer::DestroyDynamicIndexBuffer: BX_TRACE("CommandBuffer::DestroyDynamicIndexBuffer"); break;
+		case CommandBuffer::DestroyDynamicVertexBuffer: BX_TRACE("CommandBuffer::DestroyDynamicVertexBuffer"); break;
+		case CommandBuffer::DestroyShader: BX_TRACE("CommandBuffer::DestroyShader"); break;
+		case CommandBuffer::DestroyProgram: BX_TRACE("CommandBuffer::DestroyProgram"); break;
+		case CommandBuffer::DestroyTexture: BX_TRACE("CommandBuffer::DestroyTexture"); break;
+		case CommandBuffer::DestroyFrameBuffer: BX_TRACE("CommandBuffer::DestroyFrameBuffer"); break;
+		case CommandBuffer::DestroyUniform: BX_TRACE("CommandBuffer::DestroyUniform"); break;
+		case CommandBuffer::ReadTexture: BX_TRACE("CommandBuffer::ReadTexture"); break;
+		case CommandBuffer::RequestScreenShot: BX_TRACE("CommandBuffer::RequestScreenShot"); break;
+		}
+	}
+
+	void Context::dumpCommandBuffer(CommandBuffer& _cmdbuf)
+	{
+		BX_TRACE("CommandBuffer---------------------");
+		_cmdbuf.reset();
+
+		bool end = false;
+
+		if (NULL == m_renderCtx)
+		{
+			uint8_t command;
+			_cmdbuf.read(command);
+			dumpCommand(command);
+
+			switch (command)
+			{
+			case CommandBuffer::RendererShutdownEnd:
+				m_exit = true;
+				return;
+
+			case CommandBuffer::End:
+				return;
+
+			default:
+			{
+				Init init;
+				_cmdbuf.read(init);
+			}
+			break;
+			}
+		}
+
+		do
+		{
+			uint8_t command;
+			_cmdbuf.read(command);
+			dumpCommand(command);
+
+			switch (command)
+			{
+			case CommandBuffer::RendererShutdownBegin:
+			{
+				BX_ASSERT(m_rendererInitialized, "This shouldn't happen! Bad synchronization?");
+				m_rendererInitialized = false;
+			}
+			break;
+
+			case CommandBuffer::RendererShutdownEnd:
+			{
+				BX_ASSERT(!m_rendererInitialized && !m_exit, "This shouldn't happen! Bad synchronization?");
+				m_renderCtx = NULL;
+				m_exit = true;
+			}
+			BX_FALLTHROUGH;
+
+			case CommandBuffer::End:
+				end = true;
+				break;
+
+			case CommandBuffer::CreateIndexBuffer:
+			{
+				IndexBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				const Memory* mem;
+				_cmdbuf.read(mem);
+
+				uint16_t flags;
+				_cmdbuf.read(flags);
+			}
+			break;
+
+			case CommandBuffer::DestroyIndexBuffer:
+			{
+				IndexBufferHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateVertexLayout:
+			{
+				VertexLayoutHandle handle;
+				_cmdbuf.read(handle);
+
+				VertexLayout layout;
+				_cmdbuf.read(layout);
+			}
+			break;
+
+			case CommandBuffer::DestroyVertexLayout:
+			{
+				VertexLayoutHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateVertexBuffer:
+			{
+				VertexBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				const Memory* mem;
+				_cmdbuf.read(mem);
+
+				VertexLayoutHandle layoutHandle;
+				_cmdbuf.read(layoutHandle);
+
+				uint16_t flags;
+				_cmdbuf.read(flags);
+			}
+			break;
+
+			case CommandBuffer::DestroyVertexBuffer:
+			{
+				VertexBufferHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateDynamicIndexBuffer:
+			{
+				IndexBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				uint32_t size;
+				_cmdbuf.read(size);
+
+				uint16_t flags;
+				_cmdbuf.read(flags);
+			}
+			break;
+
+			case CommandBuffer::UpdateDynamicIndexBuffer:
+			{
+				IndexBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				uint32_t offset;
+				_cmdbuf.read(offset);
+
+				uint32_t size;
+				_cmdbuf.read(size);
+
+				const Memory* mem;
+				_cmdbuf.read(mem);
+			}
+			break;
+
+			case CommandBuffer::DestroyDynamicIndexBuffer:
+			{
+				IndexBufferHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateDynamicVertexBuffer:
+			{
+				VertexBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				uint32_t size;
+				_cmdbuf.read(size);
+
+				uint16_t flags;
+				_cmdbuf.read(flags);
+			}
+			break;
+
+			case CommandBuffer::UpdateDynamicVertexBuffer:
+			{
+				VertexBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				uint32_t offset;
+				_cmdbuf.read(offset);
+
+				uint32_t size;
+				_cmdbuf.read(size);
+
+				const Memory* mem;
+				_cmdbuf.read(mem);
+			}
+			break;
+
+			case CommandBuffer::DestroyDynamicVertexBuffer:
+			{
+				VertexBufferHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateShader:
+			{
+				ShaderHandle handle;
+				_cmdbuf.read(handle);
+
+				const Memory* mem;
+				_cmdbuf.read(mem);
+
+				uint16_t glslType = 0;
+				_cmdbuf.read(glslType);
+			}
+			break;
+
+			case CommandBuffer::DestroyShader:
+			{
+				ShaderHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateProgram:
+			{
+				ProgramHandle handle;
+				_cmdbuf.read(handle);
+
+				ShaderHandle vsh;
+				_cmdbuf.read(vsh);
+
+				ShaderHandle fsh;
+				_cmdbuf.read(fsh);
+			}
+			break;
+
+			case CommandBuffer::DestroyProgram:
+			{
+				BGFX_PROFILER_SCOPE("DestroyProgram", 0xff2040ff);
+
+				ProgramHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateTexture:
+			{
+				TextureHandle handle;
+				_cmdbuf.read(handle);
+
+				const Memory* mem;
+				_cmdbuf.read(mem);
+
+				uint64_t flags;
+				_cmdbuf.read(flags);
+
+				uint8_t skip;
+				_cmdbuf.read(skip);
+			}
+			break;
+
+			case CommandBuffer::UpdateTexture:
+			{
+				TextureHandle handle;
+				_cmdbuf.read(handle);
+
+				uint8_t side;
+				_cmdbuf.read(side);
+
+				uint8_t mip;
+				_cmdbuf.read(mip);
+
+				_cmdbuf.skip<Rect>();
+				_cmdbuf.skip<uint16_t>();
+				_cmdbuf.skip<uint16_t>();
+				_cmdbuf.skip<uint16_t>();
+				_cmdbuf.skip<Memory*>();
+			}
+			break;
+
+			case CommandBuffer::ReadTexture:
+			{
+				TextureHandle handle;
+				_cmdbuf.read(handle);
+
+				void* data;
+				_cmdbuf.read(data);
+
+				uint8_t mip;
+				_cmdbuf.read(mip);
+			}
+			break;
+
+			case CommandBuffer::ResizeTexture:
+			{
+				TextureHandle handle;
+				_cmdbuf.read(handle);
+
+				uint16_t width;
+				_cmdbuf.read(width);
+
+				uint16_t height;
+				_cmdbuf.read(height);
+
+				uint8_t numMips;
+				_cmdbuf.read(numMips);
+
+				uint16_t numLayers;
+				_cmdbuf.read(numLayers);
+			}
+			break;
+
+			case CommandBuffer::DestroyTexture:
+			{
+				TextureHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateFrameBuffer:
+			{
+				FrameBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				bool window;
+				_cmdbuf.read(window);
+
+				if (window)
+				{
+					void* nwh;
+					_cmdbuf.read(nwh);
+
+					uint16_t width;
+					_cmdbuf.read(width);
+
+					uint16_t height;
+					_cmdbuf.read(height);
+
+					TextureFormat::Enum format;
+					_cmdbuf.read(format);
+
+					TextureFormat::Enum depthFormat;
+					_cmdbuf.read(depthFormat);
+				}
+				else
+				{
+					uint8_t num;
+					_cmdbuf.read(num);
+
+					Attachment attachment[BGFX_CONFIG_MAX_FRAME_BUFFER_ATTACHMENTS];
+					_cmdbuf.read(attachment, sizeof(Attachment) * num);
+				}
+			}
+			break;
+
+			case CommandBuffer::UpdateFrameBuffer:
+			{
+				FrameBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				uint8_t num;
+				_cmdbuf.read(num);
+
+				Attachment attachment[BGFX_CONFIG_MAX_FRAME_BUFFER_ATTACHMENTS];
+				_cmdbuf.read(attachment, sizeof(Attachment) * num);
+			}
+			break;
+
+			case CommandBuffer::DestroyFrameBuffer:
+			{
+				FrameBufferHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::CreateUniform:
+			{
+				UniformHandle handle;
+				_cmdbuf.read(handle);
+
+				UniformType::Enum type;
+				_cmdbuf.read(type);
+
+				uint16_t num;
+				_cmdbuf.read(num);
+
+				uint8_t len;
+				_cmdbuf.read(len);
+
+				const char* name = (const char*)_cmdbuf.skip(len);
+
+				BX_TRACE("CommandBuffer::CreateUniform %s", name)
+			}
+			break;
+
+			case CommandBuffer::DestroyUniform:
+			{
+				UniformHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::RequestScreenShot:
+			{
+				FrameBufferHandle handle;
+				_cmdbuf.read(handle);
+
+				uint16_t len;
+				_cmdbuf.read(len);
+
+				_cmdbuf.skip(len);
+			}
+			break;
+
+			case CommandBuffer::UpdateViewName:
+			{
+				ViewId id;
+				_cmdbuf.read(id);
+
+				uint16_t len;
+				_cmdbuf.read(len);
+
+				_cmdbuf.skip(len);
+			}
+			break;
+
+			case CommandBuffer::InvalidateOcclusionQuery:
+			{
+				OcclusionQueryHandle handle;
+				_cmdbuf.read(handle);
+			}
+			break;
+
+			case CommandBuffer::SetName:
+			{
+				Handle handle;
+				_cmdbuf.read(handle);
+
+				uint16_t len;
+				_cmdbuf.read(len);
+
+				_cmdbuf.skip(len);
+			}
+			break;
+
+			default:
+				BX_ASSERT(false, "Invalid command: %d", command);
+				break;
+			}
+		} while (!end);
+	}
+
 	void Context::rendererExecCommands(CommandBuffer& _cmdbuf)
 	{
+		dumpCommandBuffer(_cmdbuf);
+
 		_cmdbuf.reset();
 
 		bool end = false;

@@ -3955,6 +3955,66 @@ namespace bgfx
 					bx::memCopy(sr.m_uniforms, uniforms, size);
 				}
 			}
+			else // parse glsl file, search and add uniforms
+			{
+				bx::StringView code((char*)_mem->data, _mem->size);
+				bx::LineReader lineReader(code);
+				stl::list<UniformType::Enum> types;
+				stl::list<bx::StringView> names;
+
+				for (int32_t line = 1; !lineReader.isDone(); ++line)
+				{
+					bx::StringView str = lineReader.next();
+					BX_TRACE("%3d %.*s", line, str.getLength(), str.getPtr());
+
+					bx::StringView mainStr = bx::strFind(str, "main");
+					if (!mainStr.isEmpty()) break;
+
+					stl::list<bx::StringView> words;
+					bx::WordReader wordReader(str);
+					for (int32_t word = 1; !wordReader.isDone(); ++word)
+					{
+						bx::StringView wstr = wordReader.next();
+						words.push_back(wstr);
+					}
+
+					if (!bx::strCmp(words[0], "uniform") && words.size() >= 3)
+					{
+						uint32_t sz = words.size();
+						UniformType::Enum type = UniformType::End;
+						if (!bx::strCmp(words[sz - 2], "sampler2D")) type = UniformType::Sampler;
+						else if (!bx::strCmp(words[sz - 2], "vec4")) type = UniformType::Vec4;
+
+						if (type != UniformType::End)
+						{
+							types.push_back(type);
+							words[sz - 1].set(words[sz - 1].getPtr(), words[sz - 1].getLength() - 1);
+							names.push_back(words[sz - 1]);
+						}
+
+						BX_TRACE("%3d %.*s", 0, words[0].getLength(), words[0].getPtr());
+						BX_TRACE("%3d %.*s", 1, words[sz-2].getLength(), words[sz-2].getPtr());
+						BX_TRACE("%3d %.*s", 2, words[sz-1].getLength(), words[sz-1].getPtr());
+					}
+				}
+
+				uint32_t nameCount = names.size();
+				UniformHandle* uniforms = (UniformHandle*)alloca(nameCount * sizeof(UniformHandle));
+				for (uint32_t n = 0; n < nameCount; ++n)
+				{
+					char name[256];
+					bx::strCopy(name, sizeof(name), names[n]);
+					uniforms[sr.m_num] = createUniform(name, types[n], 1);
+					sr.m_num++;
+				}
+
+				if (0 != sr.m_num)
+				{
+					uint32_t size = sr.m_num * sizeof(UniformHandle);
+					sr.m_uniforms = (UniformHandle*)BX_ALLOC(g_allocator, size);
+					bx::memCopy(sr.m_uniforms, uniforms, size);
+				}
+			}
 
 			CommandBuffer& cmdbuf = getCommandBuffer(CommandBuffer::CreateShader);
 			cmdbuf.write(handle);
@@ -4958,6 +5018,8 @@ namespace bgfx
 		RenderFrame::Enum renderFrame(int32_t _msecs = -1);
 		void flushTextureUpdateBatch(CommandBuffer& _cmdbuf);
 		void rendererExecCommands(CommandBuffer& _cmdbuf);
+		void dumpCommand(uint8_t _cmd);
+		void dumpCommandBuffer(CommandBuffer& _cmdbuf);
 
 #if BGFX_CONFIG_MULTITHREADED
 		void apiSemPost()
