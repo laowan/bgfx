@@ -926,6 +926,10 @@ namespace bgfx
 		"vec4",
 		"mat3",
 		"mat4",
+		"float",
+		"vec2",
+		"vec3",
+		"int",
 	};
 	BX_STATIC_ASSERT(UniformType::Count == BX_COUNTOF(s_uniformTypeName) );
 
@@ -1460,7 +1464,10 @@ namespace bgfx
 		4*sizeof(float),
 		3*3*sizeof(float),
 		4*4*sizeof(float),
-		1,
+		sizeof(float),
+		2*sizeof(float),
+		3*sizeof(float),
+		sizeof(int32_t),
 	};
 
 	void UniformBuffer::writeUniform(UniformType::Enum _type, uint16_t _loc, const void* _value, uint16_t _num)

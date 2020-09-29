@@ -4143,6 +4143,10 @@ namespace bgfx { namespace gl
 #else
 				CASE_IMPLEMENT_UNIFORM(Sampler, 1iv, I, int);
 				CASE_IMPLEMENT_UNIFORM(Vec4,    4fv, F, float);
+				CASE_IMPLEMENT_UNIFORM(Float,   1fv, F, float);
+				CASE_IMPLEMENT_UNIFORM(Vec2,	2fv, F, float);
+				CASE_IMPLEMENT_UNIFORM(Vec3,    3fv, F, float);
+				CASE_IMPLEMENT_UNIFORM(Int,     1iv, I, int);
 #endif
 				CASE_IMPLEMENT_UNIFORM_T(Mat3, Matrix3fv, F, float);
 				CASE_IMPLEMENT_UNIFORM_T(Mat4, Matrix4fv, F, float);
@@ -4360,6 +4364,54 @@ namespace bgfx { namespace gl
 			if (m_uniformStateCache.updateUniformCache(loc, f) )
 			{
 				GL_CHECK(glUniform4f(loc, x, y, z, w) );
+			}
+		}
+
+		void setUniform1fv(uint32_t loc, int num, const float *data)
+		{
+			bool changed = false;
+			for (int i = 0; i < num; ++i)
+			{
+				if (m_uniformStateCache.updateUniformCache(loc + i, data[i]))
+				{
+					changed = true;
+				}
+			}
+			if (changed)
+			{
+				GL_CHECK(glUniform1fv(loc, num, data));
+			}
+		}
+
+		void setUniform2fv(uint32_t loc, int num, const float *data)
+		{
+			bool changed = false;
+			for (int i = 0; i < num; ++i)
+			{
+				if (m_uniformStateCache.updateUniformCache(loc + i, *(const UniformStateCache::f2*)&data[2 * i]))
+				{
+					changed = true;
+				}
+			}
+			if (changed)
+			{
+				GL_CHECK(glUniform2fv(loc, num, data));
+			}
+		}
+
+		void setUniform3fv(uint32_t loc, int num, const float *data)
+		{
+			bool changed = false;
+			for (int i = 0; i < num; ++i)
+			{
+				if (m_uniformStateCache.updateUniformCache(loc + i, *(const UniformStateCache::f3*)&data[3 * i]))
+				{
+					changed = true;
+				}
+			}
+			if (changed)
+			{
+				GL_CHECK(glUniform3fv(loc, num, data));
 			}
 		}
 
@@ -4620,11 +4672,14 @@ namespace bgfx { namespace gl
 		{
 		case GL_INT:
 		case GL_UNSIGNED_INT:
-			return UniformType::Sampler;
+			return UniformType::Int;
 
 		case GL_FLOAT:
+			return UniformType::Float;
 		case GL_FLOAT_VEC2:
+			return UniformType::Vec2;
 		case GL_FLOAT_VEC3:
+			return UniformType::Vec3;
 		case GL_FLOAT_VEC4:
 			return UniformType::Vec4;
 

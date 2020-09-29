@@ -3984,6 +3984,10 @@ namespace bgfx
 						UniformType::Enum type = UniformType::End;
 						if (!bx::strCmp(words[sz - 2], "sampler2D")) type = UniformType::Sampler;
 						else if (!bx::strCmp(words[sz - 2], "vec4")) type = UniformType::Vec4;
+						else if (!bx::strCmp(words[sz - 2], "float")) type = UniformType::Float;
+						else if (!bx::strCmp(words[sz - 2], "vec2")) type = UniformType::Vec2;
+						else if (!bx::strCmp(words[sz - 2], "vec3")) type = UniformType::Vec3;
+						else if (!bx::strCmp(words[sz - 2], "int")) type = UniformType::Int;
 
 						if (type != UniformType::End)
 						{
