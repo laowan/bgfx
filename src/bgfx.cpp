@@ -244,6 +244,7 @@ namespace bgfx
 	static CallbackStub*  s_callbackStub  = NULL;
 	static AllocatorStub* s_allocatorStub = NULL;
 	static bool s_graphicsDebuggerPresent = false;
+	static uint64_t s_renderState = 0;
 
 	CallbackI* g_callback = NULL;
 	bx::AllocatorI* g_allocator = NULL;
@@ -2340,7 +2341,7 @@ namespace bgfx
 		if (!m_flipAfterRender)
 		{
 			BGFX_PROFILER_SCOPE("bgfx/flip", 0xff2040ff);
-			flip();
+			//flip();
 		}
 
 		if (apiSemWait(_msecs) )
@@ -2367,7 +2368,7 @@ namespace bgfx
 			if (m_flipAfterRender)
 			{
 				BGFX_PROFILER_SCOPE("bgfx/flip", 0xff2040ff);
-				flip();
+				//flip();
 			}
 		}
 		else
@@ -2725,7 +2726,6 @@ namespace bgfx
 			switch (command)
 			{
 			case CommandBuffer::RendererShutdownEnd:
-				m_exit = true;
 				return;
 
 			case CommandBuffer::End:
@@ -2750,16 +2750,11 @@ namespace bgfx
 			{
 			case CommandBuffer::RendererShutdownBegin:
 			{
-				BX_ASSERT(m_rendererInitialized, "This shouldn't happen! Bad synchronization?");
-				m_rendererInitialized = false;
 			}
 			break;
 
 			case CommandBuffer::RendererShutdownEnd:
 			{
-				BX_ASSERT(!m_rendererInitialized && !m_exit, "This shouldn't happen! Bad synchronization?");
-				m_renderCtx = NULL;
-				m_exit = true;
 			}
 			BX_FALLTHROUGH;
 
@@ -5327,7 +5322,14 @@ namespace bgfx
 	void setState(uint64_t _state, uint32_t _rgba)
 	{
 		BGFX_CHECK_API_THREAD();
+		s_renderState = _state;
 		s_ctx->m_encoder0->setState(_state, _rgba);
+	}
+
+	void appendState(uint64_t _state)
+	{
+		BGFX_CHECK_API_THREAD();
+		s_ctx->m_encoder0->setState(s_renderState | _state, 0);
 	}
 
 	void setCondition(OcclusionQueryHandle _handle, bool _visible)

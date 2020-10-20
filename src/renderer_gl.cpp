@@ -4219,7 +4219,7 @@ namespace bgfx { namespace gl
 				if (0 != flags)
 				{
 					GL_CHECK(glEnable(GL_SCISSOR_TEST) );
-					GL_CHECK(glScissor(_rect.m_x, _height-_rect.m_height-_rect.m_y, _rect.m_width, _rect.m_height) );
+					GL_CHECK(glScissor(_rect.m_x, /*_height-_rect.m_height-*/_rect.m_y, _rect.m_width, _rect.m_height) );
 					GL_CHECK(glClear(flags) );
 					GL_CHECK(glDisable(GL_SCISSOR_TEST) );
 				}
@@ -7287,7 +7287,8 @@ namespace bgfx { namespace gl
 					viewScissorRect = viewHasScissor ? scissorRect : viewState.m_rect;
 
 					GL_CHECK(glViewport(viewState.m_rect.m_x
-						, resolutionHeight-viewState.m_rect.m_height-viewState.m_rect.m_y
+						//, resolutionHeight-viewState.m_rect.m_height-viewState.m_rect.m_y
+						, viewState.m_rect.m_y
 						, viewState.m_rect.m_width
 						, viewState.m_rect.m_height
 						) );

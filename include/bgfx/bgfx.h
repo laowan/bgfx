@@ -3470,6 +3470,9 @@ namespace bgfx
 		, uint32_t _rgba = 0
 		);
 
+	/// Append extra state base on last-set state.
+	void appendState(uint64_t _state);
+
 	/// Set condition for rendering.
 	///
 	/// @param[in] _handle Occlusion query handle.

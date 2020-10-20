@@ -3961,6 +3961,7 @@ namespace bgfx
 				bx::LineReader lineReader(code);
 				stl::list<UniformType::Enum> types;
 				stl::list<bx::StringView> names;
+				stl::list<uint16_t> arrayCounts;
 
 				for (int32_t line = 1; !lineReader.isDone(); ++line)
 				{
@@ -3983,6 +3984,7 @@ namespace bgfx
 						uint32_t sz = words.size();
 						UniformType::Enum type = UniformType::End;
 						if (!bx::strCmp(words[sz - 2], "sampler2D")) type = UniformType::Sampler;
+						else if (!bx::strCmp(words[sz - 2], "mat4")) type = UniformType::Mat4;
 						else if (!bx::strCmp(words[sz - 2], "vec4")) type = UniformType::Vec4;
 						else if (!bx::strCmp(words[sz - 2], "float")) type = UniformType::Float;
 						else if (!bx::strCmp(words[sz - 2], "vec2")) type = UniformType::Vec2;
@@ -3993,7 +3995,24 @@ namespace bgfx
 						{
 							types.push_back(type);
 							words[sz - 1].set(words[sz - 1].getPtr(), words[sz - 1].getLength() - 1);
+
+							// extract name if find a array
+							uint32_t count = 1;
+							bx::StringView tmpL = bx::strFind(words[sz - 1], "[");
+							bx::StringView tmpR = bx::strFind(words[sz - 1], "]");
+							if (tmpL.getLength() > 0 && tmpR.getLength() > 0)
+							{
+								words[sz - 1].set(words[sz - 1].getPtr(), tmpL.getPtr() - words[sz - 1].getPtr());
+
+								// calculate count
+								bx::StringView countStr(tmpL.getPtr() + 1, tmpR.getPtr());
+								BX_TRACE("%3d %.*s", 0, countStr.getLength(), countStr.getPtr());
+
+								bool ret = bx::fromString(&count, countStr);
+								BX_ASSERT(ret, "cannot convert string to number");
+							}
 							names.push_back(words[sz - 1]);
+							arrayCounts.push_back(count);
 						}
 
 						BX_TRACE("%3d %.*s", 0, words[0].getLength(), words[0].getPtr());
@@ -4008,7 +4027,7 @@ namespace bgfx
 				{
 					char name[256];
 					bx::strCopy(name, sizeof(name), names[n]);
-					uniforms[sr.m_num] = createUniform(name, types[n], 1);
+					uniforms[sr.m_num] = createUniform(name, types[n], arrayCounts[n]);
 					sr.m_num++;
 				}
 
