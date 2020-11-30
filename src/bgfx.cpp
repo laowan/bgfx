@@ -4037,6 +4037,7 @@ namespace bgfx
 		}
 
 		s_threadIndex = 0;
+		s_renderFrameCalled = false;
 		g_callback    = NULL;
 		g_allocator   = NULL;
 	}
@@ -5361,6 +5362,12 @@ namespace bgfx
 		BGFX_CHECK_API_THREAD();
 		s_renderState = _state;
 		s_ctx->m_encoder0->setState(_state, _rgba);
+	}
+
+	uint64_t getState()
+	{
+		BGFX_CHECK_API_THREAD();
+		return s_renderState;
 	}
 
 	void appendState(uint64_t _state)

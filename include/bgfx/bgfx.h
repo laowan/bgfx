@@ -3472,6 +3472,8 @@ namespace bgfx
 		, uint32_t _rgba = 0
 		);
 
+	uint64_t getState();
+
 	/// Append extra state base on last-set state.
 	void appendState(uint64_t _state);
 

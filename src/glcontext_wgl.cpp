@@ -304,7 +304,7 @@ namespace bgfx { namespace gl
 	{
 		if (NULL != g_platformData.nwh)
 		{
-			wglMakeCurrent(NULL, NULL);
+			//wglMakeCurrent(NULL, NULL);
 
 			if (NULL == g_platformData.context)
 			{

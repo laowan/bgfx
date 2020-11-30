@@ -4002,6 +4002,7 @@ namespace bgfx
 						uint32_t sz = words.size();
 						UniformType::Enum type = UniformType::End;
 						if (!bx::strCmp(words[sz - 2], "sampler2D")) type = UniformType::Sampler;
+						else if (!bx::strCmp(words[sz - 2], "samplerCube")) type = UniformType::Sampler;
 						else if (!bx::strCmp(words[sz - 2], "mat4")) type = UniformType::Mat4;
 						else if (!bx::strCmp(words[sz - 2], "vec4")) type = UniformType::Vec4;
 						else if (!bx::strCmp(words[sz - 2], "float")) type = UniformType::Float;
@@ -4015,7 +4016,7 @@ namespace bgfx
 							words[sz - 1].set(words[sz - 1].getPtr(), words[sz - 1].getLength() - 1);
 
 							// extract name if find a array
-							uint32_t count = 1;
+							uint32_t arrCount = 1;
 							bx::StringView tmpL = bx::strFind(words[sz - 1], "[");
 							bx::StringView tmpR = bx::strFind(words[sz - 1], "]");
 							if (tmpL.getLength() > 0 && tmpR.getLength() > 0)
@@ -4026,11 +4027,11 @@ namespace bgfx
 								bx::StringView countStr(tmpL.getPtr() + 1, tmpR.getPtr());
 								BX_TRACE("%3d %.*s", 0, countStr.getLength(), countStr.getPtr());
 
-								bool ret = bx::fromString(&count, countStr);
+								bool ret = bx::fromString(&arrCount, countStr);
 								BX_ASSERT(ret, "cannot convert string to number");
 							}
 							names.push_back(words[sz - 1]);
-							arrayCounts.push_back(count);
+							arrayCounts.push_back((uint16_t)arrCount);
 						}
 
 						BX_TRACE("%3d %.*s", 0, words[0].getLength(), words[0].getPtr());

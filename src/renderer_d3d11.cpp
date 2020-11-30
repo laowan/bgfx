@@ -1911,6 +1911,11 @@ namespace bgfx { namespace d3d11
 			m_frameBuffers[_handle.idx].create(denseIdx, _nwh, _width, _height, _format, _depthFormat);
 		}
 
+		void updateFrameBuffer(FrameBufferHandle _handle, uint8_t _num, const Attachment* _attachment)
+		{
+			m_frameBuffers[_handle.idx].update(_num, _attachment);
+		}
+
 		void destroyFrameBuffer(FrameBufferHandle _handle) override
 		{
 			uint16_t denseIdx = m_frameBuffers[_handle.idx].destroy();
@@ -4889,6 +4894,18 @@ namespace bgfx { namespace d3d11
 		m_nwh      = _nwh;
 		m_denseIdx = _denseIdx;
 		m_num      = 1;
+	}
+
+	void FrameBufferD3D11::update(uint8_t _num, const Attachment* _attachment)
+	{
+		m_denseIdx = UINT16_MAX;
+		m_numTh = _num;
+		bx::memCopy(m_attachment, _attachment, _num * sizeof(Attachment));
+
+		m_dsv = NULL;
+		m_needPresent = false;
+
+		postReset();
 	}
 
 	uint16_t FrameBufferD3D11::destroy()
